@@ -7,6 +7,7 @@ const router = createRouter({
     { path: '/Manager', component: import('../views/Manager.vue'),
       children: [
         { path: 'home', component: import('../views/Home.vue'),},
+        { path: 'admin', component: import('../views/admin.vue'),},
         { path: 'about', component: import('../views/About.vue'),},
         { path: 'pgSQL', component: import('../views/pgSQL.vue'),},
       ]},

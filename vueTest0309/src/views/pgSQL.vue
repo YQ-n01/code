@@ -23,9 +23,18 @@
 <script setup>
 import { reactive} from "vue";
 import {Search} from "@element-plus/icons-vue";
+import request from "@/utils/request.js";
 
 const data = reactive({
   name: null,
   tableData:[]
 })
+
+const load = () =>{
+  request.get("/admin/selectAll").then(res => {
+    console.log(res.data);
+  })
+}
+
+load()
 </script>

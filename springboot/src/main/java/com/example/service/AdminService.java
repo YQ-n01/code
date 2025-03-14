@@ -31,8 +31,10 @@ public class AdminService {
 
     public PageInfo<Admin> selectPage(Integer pageNum, Integer pageSize) {
         PageHelper.startPage(pageNum,pageSize);
-        List<Admin> List = adminMapper.selectAll();
-        return PageInfo.of(List);
+        List<Admin> list = adminMapper.selectAll();
+            return PageInfo.of(list);
     }
+
+
 }
 

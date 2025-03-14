@@ -25,4 +25,5 @@ public class GlobalExceptionHandler {
         log.error("自定义异常", e);
         return Result.error(e.getCode(), e.getMsg());
     }
+
 }

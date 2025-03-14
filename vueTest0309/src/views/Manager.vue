@@ -34,7 +34,7 @@
       <!-- 菜单部分 -->
       <div style="width: 450px; height: 200px; box-shadow: 0 0 8px rgba(0, 0, 0, 0.12);">
         <!-- el-menu 组件，控制菜单的展开、选中状态 -->
-        <el-menu :router="true" :default-openeds="['1']" :default-active="route.path" style="min-height: calc(100vh - 80px);">
+        <el-menu :router="true" :default-openeds="['1']" :default-active="router.currentRoute.value.path" style="min-height: calc(100vh - 80px);">
           <!-- 一级菜单项：首页 -->
           <el-menu-item index="/manager/home" style="font-size: 26px; align-items: center; justify-content: center;">
             <el-icon size="25"><House /></el-icon>
@@ -47,7 +47,7 @@
               <el-icon><Location /></el-icon>
               <span>信号采集</span>
             </template>
-            <el-menu-item index="/manager/about">二级菜单</el-menu-item>
+            <el-menu-item index="/manager/admin">二级菜单</el-menu-item>
           </el-sub-menu>
 
           <!-- 二级菜单：数据库 -->
@@ -100,6 +100,8 @@
 // 导入 Vue Router 的功能
 import { useRoute } from 'vue-router';
 import { ElDropdown, ElDropdownMenu, ElDropdownItem, ElMenu, ElMenuItem, ElSubMenu, ElIcon } from 'element-plus';
+import router from "@/router/index.js";
+import {House, Location} from "@element-plus/icons-vue";
 
 const route = useRoute(); // 获取当前路由
 </script>
