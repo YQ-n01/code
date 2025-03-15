@@ -10,6 +10,9 @@ const router = createRouter({
         { path: 'admin', component: import('../views/admin.vue'),},
         { path: 'about', component: import('../views/About.vue'),},
         { path: 'pgSQL', component: import('../views/pgSQL.vue'),},
+        { path: 'leak-location1', component: import('../views/pd.vue'),},
+        { path: 'leak-location2', component: import('../views/GCC.vue'),},
+
       ]},
 
     { path: '/about', component: import('../views/About.vue'),},

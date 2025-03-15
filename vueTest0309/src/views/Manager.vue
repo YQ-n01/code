@@ -83,7 +83,8 @@
               <el-icon><Location /></el-icon>
               <span>泄漏定位</span>
             </template>
-            <el-menu-item index="/manager/leak-location">二级菜单</el-menu-item>
+            <el-menu-item index="/manager/leak-location1">相位差谱</el-menu-item>
+            <el-menu-item index="/manager/leak-location2">GCC</el-menu-item>
           </el-sub-menu>
         </el-menu>
       </div>

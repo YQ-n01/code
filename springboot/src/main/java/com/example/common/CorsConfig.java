@@ -9,7 +9,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 /**
  * 跨域配置
  */
-
 @Configuration
 public class CorsConfig {
 
@@ -17,10 +16,19 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.addAllowedOrigin("*"); //1 设置访问源地址
-        corsConfiguration.addAllowedHeader("*"); //2 设置访问源请求头
-        corsConfiguration.addAllowedMethod("*"); //3 设置访问源请求方式
-        source.registerCorsConfiguration("/**", corsConfiguration); //4 对接口配置跨域设置
+
+        // 允许前端 Vue 的地址（推荐使用前端的具体域名，而不是 "*"）
+        corsConfiguration.addAllowedOriginPattern("*");
+        corsConfiguration.addAllowedHeader("*"); // 允许所有请求头
+        corsConfiguration.addAllowedMethod("*"); // 允许所有请求方法（GET, POST, PUT, DELETE, OPTIONS）
+
+        // 允许跨域携带 Cookie
+        corsConfiguration.setAllowCredentials(true);
+
+        // 允许 Content-Type 为 multipart/form-data
+        corsConfiguration.addExposedHeader("Content-Type");
+
+        source.registerCorsConfiguration("/**", corsConfiguration); // 应用于所有请求
         return new CorsFilter(source);
     }
 }

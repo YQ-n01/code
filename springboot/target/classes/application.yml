@@ -8,6 +8,11 @@ spring:
     username: postgres
     password: "Yn040629."
     driver-class-name: org.postgresql.Driver
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 100MB
 
 # 配置MyBatis实体和xml映射
 mybatis:
@@ -16,5 +21,7 @@ mybatis:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: true
+
+
 
 

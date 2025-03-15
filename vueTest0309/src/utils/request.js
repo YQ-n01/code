@@ -19,11 +19,11 @@ request.interceptors.request.use(config => {
 // 可以在接口响应后统一处理
 request.interceptors.response.use(
     response => {
-       let res = response.data;
-       if (typeof res === "string") {
-           res = res ? JSON.parse(res) : res;
-       }
-       return res;
+        let res = response.data;
+        if (typeof res === "string") {
+            res = res ? JSON.parse(res) : res;
+        }
+        return res;
     },
     error => {
         if (error.response.status === 404) {
@@ -33,7 +33,7 @@ request.interceptors.response.use(
         } else {
             console.error(error.message)
         }
-          return Promise.reject(error)
+        return Promise.reject(error)
     }
 )
 export default request

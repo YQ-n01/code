@@ -41,6 +41,34 @@
             <version>1.4.6</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.mathworks</groupId>
+            <artifactId>javabuilder</artifactId>
+            <version>9.15</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mathworks</groupId>
+            <artifactId>pdcal</artifactId>
+            <version>2.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mathworks</groupId>
+            <artifactId>gcccal</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+
+
+
     </dependencies>
 
     <build>
