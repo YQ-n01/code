@@ -14,7 +14,12 @@ spring:
       max-file-size: 50MB
       max-request-size: 100MB
 
-# 配置MyBatis实体和xml映射
+
+      # 配置MyBatis实体和xml映射
+  web:
+    resources:
+      static-locations: file:///D:/leak_output/
+
 mybatis:
   #配置xml位置
   mapper-locations: classpath:mapper/*.xml

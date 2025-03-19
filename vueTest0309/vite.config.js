@@ -2,29 +2,27 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import AutoImport from 'unplugin-auto-import/vite'//自动导入vue中的组件
-import Components from 'unplugin-vue-components/vite'//自动导入ui-组件比如element-plus等
-import{ElementPlusResolver}from 'unplugin-vue-components/resolvers'//对应组件库引入，AntDesignVueResolver
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
-    //element-plus按需导入
     AutoImport({
       resolvers: [ElementPlusResolver()],
     }),
     Components({
       resolvers: [
-        //配置elementPLus采用sass样式配置系统
-        ElementPlusResolver({importStyle: "sass"})
+        ElementPlusResolver({ importStyle: 'sass' })
       ],
     }),
   ],
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData:  '@use "@/assets/css/index.scss" as *;',
+        additionalData: '@use "@/assets/css/index.scss" as *;',
       },
     },
   },
@@ -33,4 +31,18 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+
+  // ✅ 添加 global 补丁修复 WebSocket 报错
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+      plugins: [
+        NodeGlobalsPolyfillPlugin({
+          buffer: true
+        })
+      ]
+    }
+  }
 })

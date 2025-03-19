@@ -47,7 +47,8 @@
               <el-icon><Location /></el-icon>
               <span>信号采集</span>
             </template>
-            <el-menu-item index="/manager/admin">二级菜单</el-menu-item>
+            <el-menu-item index="/manager/signal">动态检测</el-menu-item>
+            <el-menu-item index="/manager/history">历史查询</el-menu-item>
           </el-sub-menu>
 
           <!-- 二级菜单：数据库 -->
@@ -57,15 +58,6 @@
               <span>数据库</span>
             </template>
             <el-menu-item index="/manager/pgSQL">数据查询</el-menu-item>
-          </el-sub-menu>
-
-          <!-- 二级菜单：神经网络训练 -->
-          <el-sub-menu index="3">
-            <template #title>
-              <el-icon><Location /></el-icon>
-              <span>神经网络训练</span>
-            </template>
-            <el-menu-item index="/manager/neural-network">二级菜单</el-menu-item>
           </el-sub-menu>
 
           <!-- 二级菜单：泄漏判断 -->

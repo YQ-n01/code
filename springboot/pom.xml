@@ -66,6 +66,29 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>signal-controller</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>signal-utils</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mathworks</groupId>
+            <artifactId>preLeakcal</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+
 
 
 
