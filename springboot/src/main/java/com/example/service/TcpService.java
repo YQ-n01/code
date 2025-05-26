@@ -1,90 +1,73 @@
 package com.example.service;
 
+import com.example.config.SensorProperties;
 import com.example.handler.ClientHandler;
-import com.example.internal.FpgaSignalHelper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 @Service
 public class TcpService {
 
-    private static final int PORT = 300;
-    private ServerSocket serverSocket;
+    private final SensorProperties sensorProperties;
 
-    // ✅ 采集中状态标记
+    @Autowired
+    public TcpService(SensorProperties sensorProperties) {
+        this.sensorProperties = sensorProperties;
+    }
+
+    private static final int PORT = 300;
     private volatile boolean collecting = false;
 
-    // ✅ 当前 FPGA 设备的 IP 地址
-    private String currentFpgaIp;
-
-    // ✅ 启动采集逻辑
-    public void startCollection(String fpgaIp) {
+    public void startAllCollections() {
         if (collecting) {
-            System.out.println("⚠️ 当前已有采集任务在运行，不能重复启动");
+            System.out.println("⚠️ 已有采集任务运行中");
             return;
         }
 
         collecting = true;
-        currentFpgaIp = fpgaIp;
+        for (String ip : sensorProperties.getIps()) {
+            startCollection(ip);
+        }
+    }
 
+    public void startCollection(String ip) {
         new Thread(() -> {
-            try {
-                // 发送开始命令
-                FpgaSignalHelper.startSignalCollection(currentFpgaIp);
-                System.out.println("✅ 已发送 FPGA 启动采集命令");
-
-                // 启动 TCP server
-                serverSocket = new ServerSocket(PORT, 50, InetAddress.getByName("192.168.0.20"));
-                serverSocket.setSoTimeout(200000); // 最多等待 20 秒连接
-                System.out.println("🚀 TCP 服务监听端口：" + PORT);
+            try (ServerSocket serverSocket = new ServerSocket(PORT, 50, InetAddress.getByName(ip))) {
+                System.out.println("🚀 监听本地网卡 " + ip + ":" + PORT);
 
                 while (collecting) {
                     try {
                         Socket socket = serverSocket.accept();
-                        System.out.println("📡 接收到客户端连接：" + socket.getInetAddress());
-
-                        new Thread(new ClientHandler(socket)).start();
-                    } catch (SocketTimeoutException e) {
-                        System.out.println("⏰ 20 秒内未连接客户端，自动停止采集");
-                        stopCollection();
-                        break;
+                        String sensorIp = socket.getInetAddress().getHostAddress();
+                        System.out.println("📡 接收到传感器 [" + sensorIp + "] 连接");
+                        new Thread(new ClientHandler(socket, sensorIp)).start();
+                    } catch (IOException e) {
+                        System.out.println("⚠️ [" + ip + "] 接收失败：" + e.getMessage());
                     }
                 }
 
             } catch (IOException e) {
-                System.out.println("⚠️ 采集服务异常：" + e.getMessage());
-                stopCollection();
+                System.out.println("⚠️ [" + ip + "] 监听失败：" + e.getMessage());
             }
         }).start();
     }
 
-    // ✅ 停止采集
     public void stopCollection() {
         if (!collecting) {
-            System.out.println("ℹ️ 当前没有正在运行的采集任务");
+            System.out.println("ℹ️ 没有采集任务在运行");
             return;
         }
 
         collecting = false;
-
-        try {
-            FpgaSignalHelper.stopSignalCollection(currentFpgaIp);
-            System.out.println("⛔ 已发送 FPGA 停止采集命令");
-
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close();
-                System.out.println("✅ TCP 服务已关闭");
-            }
-        } catch (IOException e) {
-            System.out.println("⚠️ 停止采集失败：" + e.getMessage());
-        }
+        System.out.println("✅ 已请求停止所有采集任务");
     }
 
-    // ✅ 提供当前状态
     public boolean isCollecting() {
         return collecting;
     }
-
 }

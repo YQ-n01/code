@@ -14,21 +14,22 @@ import java.util.Arrays;
 public class ClientHandler implements Runnable {
 
     private final Socket socket;
-    private static final int MAX_PACKET_SIZE = 1514;
+    private final String sensorIp;  // 传感器真实 IP
 
-    // ✅ 固定包头（推荐写死或者从 ByteUtils 引入）
+    private static final int MAX_PACKET_SIZE = 1514;
     private static final byte[] PACKET_HEADER = ByteUtils.PACKET_HEADER;
 
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket, String sensorIp) {
         this.socket = socket;
+        this.sensorIp = sensorIp;
     }
 
     @Override
     public void run() {
-        System.out.println("📡 客户端连接：" + socket.getInetAddress());
+        System.out.println("📡 [" + sensorIp + "] 客户端连接：" + socket.getInetAddress());
 
-        String filePrefix = createTimestampedFilePrefix();
-        System.out.println("📁 当前数据路径前缀：" + filePrefix);
+        String filePrefix = createTimestampedFilePrefix(sensorIp);
+        System.out.println("📁 [" + sensorIp + "] 数据路径：" + filePrefix);
 
         File rawFilePath = Paths.get(filePrefix + "_raw_data.txt").toFile();
         File paramFilePath = Paths.get(filePrefix + "_parameters.txt").toFile();
@@ -70,9 +71,9 @@ public class ClientHandler implements Runnable {
                         byte[] completePacket = Arrays.copyOfRange(allData, 0, expectedPacketSize);
 
                         try {
-                            PacketProcessor.processAndStorePacket(rawFile, paramFile, waveformFile, completePacket);
+                            PacketProcessor.processAndStorePacket(sensorIp, rawFile, paramFile, waveformFile, completePacket);
                         } catch (Exception ex) {
-                            System.err.println("❌ 包处理异常: " + ex.getMessage());
+                            System.err.println("❌ [" + sensorIp + "] 包处理异常: " + ex.getMessage());
                             ex.printStackTrace();
                         }
 
@@ -87,33 +88,30 @@ public class ClientHandler implements Runnable {
             }
 
         } catch (IOException e) {
-            System.err.println("⚠️ 客户端数据处理异常：" + e.getMessage());
-            e.printStackTrace();
+            System.err.println("⚠️ [" + sensorIp + "] 数据处理异常：" + e.getMessage());
         } finally {
             try {
                 socket.close();
-                System.out.println("⛔ 客户端断开：" + socket.getInetAddress());
+                System.out.println("⛔ [" + sensorIp + "] 客户端断开");
             } catch (IOException e) {
-                System.err.println("❌ 关闭连接异常：" + e.getMessage());
+                System.err.println("❌ [" + sensorIp + "] 关闭连接异常：" + e.getMessage());
             }
         }
     }
 
-    // ✅ 每次运行都创建新路径
-    private String createTimestampedFilePrefix() {
+    private String createTimestampedFilePrefix(String sensorIp) {
         LocalDate nowDate = LocalDate.now();
         String dateStr = nowDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String timeStr = LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm-ss-SSS"));
+        String sanitizedIp = sensorIp.replace(".", "_");
         String dir = "data" + File.separator + dateStr;
 
         try {
             Files.createDirectories(Paths.get(dir));
-            System.out.println("📂 创建目录成功：" + dir);
         } catch (IOException e) {
-            System.out.println("⚠️ 创建数据目录失败：" + dir);
+            System.out.println("⚠️ [" + sensorIp + "] 创建目录失败：" + dir);
         }
 
-        return dir + File.separator + dateStr + "_" + timeStr;
+        return dir + File.separator + sanitizedIp + "_" + dateStr + "_" + timeStr;
     }
-
 }

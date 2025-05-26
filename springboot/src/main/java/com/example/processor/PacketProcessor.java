@@ -18,7 +18,7 @@ import java.util.List;
 
 public class PacketProcessor {
 
-    public static void processAndStorePacket(BufferedWriter rawFile, BufferedWriter paramFile,
+    public static void processAndStorePacket(String sourceIp, BufferedWriter rawFile, BufferedWriter paramFile,
                                              BufferedWriter waveformFile, byte[] packet) throws IOException {
         String hexData = bytesToHex(packet);
         rawFile.write(hexData);
@@ -28,18 +28,18 @@ public class PacketProcessor {
 
         int typeByte = packet[8] & 0xFF;
         if (typeByte == 0x00) {
-            String parsedParams = parseParameterPacket(packet);
+            String parsedParams = parseParameterPacket(sourceIp, packet);
             paramFile.write(parsedParams);
             paramFile.newLine();
             paramFile.flush();
-            System.out.println("📥 存储参数文件");
+            System.out.println("📥 [" + sourceIp + "] 存储参数文件");
         } else if (typeByte == 0x01) {
-            processWaveformData(waveformFile, packet);
-            System.out.println("📥 存储波形数据");
+            processWaveformData(sourceIp, waveformFile, packet);
+            System.out.println("📥 [" + sourceIp + "] 存储波形数据");
         }
     }
 
-    private static void processWaveformData(BufferedWriter waveformFile, byte[] packet) throws IOException {
+    private static void processWaveformData(String sourceIp, BufferedWriter waveformFile, byte[] packet) throws IOException {
         if (packet.length <= 48) return;
         byte[] waveformData = Arrays.copyOfRange(packet, 48, packet.length);
 
@@ -61,11 +61,11 @@ public class PacketProcessor {
         waveformFile.newLine();
         waveformFile.flush();
 
-        // ✅ 将波形点添加到缓存池
-        WaveformStorage.addPoints(points);
+        // ✅ 按 IP 存入缓存和推送
+        WaveformStorage.addPoints(sourceIp, points);
     }
 
-    private static String parseParameterPacket(byte[] packet) {
+    private static String parseParameterPacket(String sourceIp, byte[] packet) {
         if (packet.length < 76) return "⚠️ 参数包长度不足 76 字节，解析失败！";
 
         ByteBuffer buffer = ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN);
@@ -92,7 +92,6 @@ public class PacketProcessor {
         rms = round3(rms);
         asl = round3(asl);
 
-
         long tr = Integer.toUnsignedLong(buffer.getInt());
         long riseCount = Integer.toUnsignedLong(buffer.getInt());
         long duration = Integer.toUnsignedLong(buffer.getInt());
@@ -110,7 +109,8 @@ public class PacketProcessor {
         param.riseCount = riseCount;
         param.duration = duration;
         param.ringCount = ringCount;
-        ParamStorage.set(param);
+
+        ParamStorage.addParam(sourceIp, param);
 
         return String.format(
                 "到达时间: %s, AMP: %.3f, Power: %.3f, RMS: %.3f, ASL: %.3f, tr: %d, 上升计数: %d, 持续时间: %d, 振铃计数: %d",
@@ -132,12 +132,12 @@ public class PacketProcessor {
         }
         return hexString.toString().trim();
     }
+
     private static double round3(double value) {
         return Math.round(value * 1000.0) / 1000.0;
     }
+
     private static double round6(double value) {
         return Math.round(value * 1_000_000.0) / 1_000_000.0;
     }
-
-
 }

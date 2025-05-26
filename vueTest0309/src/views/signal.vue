@@ -6,13 +6,21 @@
         <h3 style="margin: 0;">信号采集参数设置</h3>
       </div>
 
-      <el-form label-width="80px" label-position="left">
-        <!-- 设备 IP -->
-        <el-form-item label="设备 IP：" class="ip-input">
-          <el-input v-model="ip" placeholder="192.168.0.104" style="width: 200px;" />
-        </el-form-item>
+      <!-- 传感器选择按钮 -->
+      <div style="margin-bottom: 20px; text-align: center;">
+        <el-button
+            :type="currentSensorIp === '192_168_0_104' ? 'primary' : 'default'"
+            @click="selectSensor('192_168_0_104')">
+          传感器 1
+        </el-button>
+        <el-button
+            :type="currentSensorIp === '192_168_0_106' ? 'primary' : 'default'"
+            @click="selectSensor('192_168_0_106')">
+          传感器 2
+        </el-button>
+      </div>
 
-        <!-- 参数第一行 -->
+      <el-form label-width="80px" label-position="left">
         <div class="form-row">
           <el-form-item label="EET (us)">
             <el-input v-model="params.eet_v2" />
@@ -25,7 +33,6 @@
           </el-form-item>
         </div>
 
-        <!-- 参数第二行 -->
         <div class="form-row">
           <el-form-item label="采样速度 (kHz)">
             <el-input v-model="params.speed" />
@@ -40,7 +47,7 @@
 
         <!-- 按钮 -->
         <el-form-item class="btn-row">
-          <el-button type="primary" @click="startCollect">▶️ 开始采集</el-button>
+          <el-button type="primary" @click="startAllCollect">▶️ 开始全部采集</el-button>
           <el-button type="danger" @click="stopCollect">⛔ 停止采集</el-button>
         </el-form-item>
       </el-form>
@@ -48,7 +55,6 @@
 
     <!-- 下方区域 -->
     <div class="bottom-area">
-      <!-- 参数表格 -->
       <div class="left-table">
         <h4 class="table-title">📋 实时参数</h4>
         <div class="table-wrapper">
@@ -66,7 +72,6 @@
         </div>
       </div>
 
-      <!-- 波形图 -->
       <div class="right-chart">
         <h4 class="chart-title">📈 实时波形</h4>
         <div id="waveformChart" class="chart-container"></div>
@@ -82,11 +87,12 @@ import * as echarts from 'echarts'
 import SockJS from 'sockjs-client'
 import Stomp from 'stompjs'
 
-const ip = ref('192.168.0.104')
+const ip = ref('192.168.0.104')  // 用于参数设置
+const currentSensorIp = ref('192_168_0_104')  // 当前显示的传感器（订阅用）
 
 const params = ref({
   eet_v2: '2000',
-  hdt_v2: '600',
+  hdt_v2: '2000',
   hlt_v2: '500',
   speed: '1000',
   trigger_db: '35',
@@ -95,29 +101,32 @@ const params = ref({
 
 const paramList = ref([])
 let waveformChart = null
+let stompClient = null
 
-const startCollect = async () => {
+const startAllCollect = async () => {
   try {
     const paramStr = Object.entries(params.value)
         .map(([k, v]) => `${k}=${v}`)
         .join('&')
+
     await axios.post('http://localhost:9999/api/signal/setParams', {
-      ip: ip.value,
+      ip: ip.value,  // 通常只需要发一次参数
       params: paramStr,
     })
-    await axios.post('http://localhost:9999/api/signal/start', { ip: ip.value })
-    console.log('开始采集成功')
+
+    await axios.post('http://localhost:9999/api/signal/startAll')
+    console.log('✅ 已触发全部采集任务')
   } catch (err) {
-    console.error('开始采集失败', err)
+    console.error('❌ 开始采集失败', err)
   }
 }
 
 const stopCollect = async () => {
   try {
     await axios.post('http://localhost:9999/api/signal/stop')
-    console.log('停止采集成功')
+    console.log('✅ 停止采集成功')
   } catch (err) {
-    console.error('停止采集失败', err)
+    console.error('❌ 停止采集失败', err)
   }
 }
 
@@ -127,26 +136,9 @@ const initChart = () => {
   waveformChart = echarts.init(dom)
   waveformChart.setOption({
     tooltip: { trigger: 'axis' },
-    xAxis: {
-      type: 'category',
-      data: [],
-      axisLine: { show: false }
-    },
-    yAxis: {
-      type: 'value',
-      min: 'dataMin',
-      max: 'dataMax',
-      minInterval: 1,
-      name: '幅值 (V)',
-      axisLabel: { fontSize: 10 }
-    },
-    series: [{
-      name: 'Voltage',
-      type: 'line',
-      data: [],
-      showSymbol: false,
-      lineStyle: { width: 1 }
-    }],
+    xAxis: { type: 'category', data: [], axisLine: { show: false } },
+    yAxis: { type: 'value', min: 'dataMin', max: 'dataMax', minInterval: 1, name: '幅值 (V)', axisLabel: { fontSize: 10 } },
+    series: [{ name: 'Voltage', type: 'line', data: [], showSymbol: false, lineStyle: { width: 1 } }],
     animation: false
   })
   waveformChart.resize()
@@ -159,41 +151,52 @@ const updateChart = (points) => {
   const intervalMs = 1000 / sampleRate
   const xData = points.map((_, i) => (i * intervalMs).toFixed(2))
   waveformChart.setOption({
-    xAxis: {
-      data: xData,
-      name: '时间 (ms)',
-      nameTextStyle: { fontSize: 12 },
-      axisLabel: { fontSize: 10 }
-    },
+    xAxis: { data: xData, name: '时间 (ms)', nameTextStyle: { fontSize: 12 }, axisLabel: { fontSize: 10 } },
     series: [{ data: points }]
   })
 }
 
+const selectSensor = (sensorIp) => {
+  currentSensorIp.value = sensorIp
+  paramList.value = []
+  if (stompClient) subscribeTopics()
+}
+
 const initWebSocket = () => {
   const socket = new SockJS('http://localhost:9999/ws')
-  const stompClient = Stomp.over(socket)
+  stompClient = Stomp.over(socket)
   stompClient.connect({}, () => {
-    stompClient.subscribe('/topic/params', (msg) => {
-      const raw = JSON.parse(msg.body)
-      const mapped = {
-          time: raw.timestamp,
-          amp: raw.amp,
-          power: raw.power,
-          rms: raw.rms,
-          asl: raw.asl,
-          tr: raw.tr,
-          rise_count: raw.riseCount,
-          duration: raw.duration,
-          ring_count: raw.ringCount,
-      }
-      paramList.value.unshift(mapped)
-      if (paramList.value.length > 100) paramList.value.length = 100
-    })
-    stompClient.subscribe('/topic/waveform', (msg) => {
-      const points = JSON.parse(msg.body)
-      updateChart(points)
-    })
+    subscribeTopics()
   })
+}
+
+const subscribeTopics = () => {
+  stompClient.unsubscribe('param-sub')
+  stompClient.unsubscribe('waveform-sub')
+
+  stompClient.subscribe(`/topic/params/${currentSensorIp.value}`, (msg) => {
+    const raw = JSON.parse(msg.body)
+    const mapped = {
+      time: raw.timestamp,
+      amp: raw.amp,
+      power: raw.power,
+      rms: raw.rms,
+      asl: raw.asl,
+      tr: raw.tr,
+      rise_count: raw.riseCount,
+      duration: raw.duration,
+      ring_count: raw.ringCount,
+    }
+    paramList.value.unshift(mapped)
+    if (paramList.value.length > 100) paramList.value.length = 100
+  }, { id: 'param-sub' })
+
+  stompClient.subscribe(`/topic/waveform/${currentSensorIp.value}`, (msg) => {
+    const points = JSON.parse(msg.body)
+    updateChart(points)
+  }, { id: 'waveform-sub' })
+
+  console.log(`✅ 已切换订阅到 ${currentSensorIp.value}`)
 }
 
 onMounted(() => {
@@ -203,67 +206,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.signal-page {
-  padding: 20px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 50px;
-}
-
-.btn-row {
-  margin-left: 0;
-  margin-top: 20px;
-}
-
-.bottom-area {
-  display: flex;
-  margin-top: 20px;
-  height: 500px;
-}
-
-.left-table,
-.right-chart {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.table-wrapper {
-  flex: 1;
-  overflow-y: auto;
-}
-.left-table {
-  flex: 1;
-  margin-right: 40px; /* ✅ 原来是 20px，可以拉开间距 */
-  display: flex;
-  flex-direction: column;
-}
-
-.right-chart {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding-left: 40px;  /* ✅ 拉开和左边的距离 */
-  border-left: 1px solid #531b1b;
-}
-
-.table-title,
-.chart-title {
-  font-size: 22px;
-  margin: 0 0 16px 0; /* ✅ 统一底部间距 */
-  padding-left: 10px;
-}
-
-.chart-container {
-  flex: 1;
-  height: 100%;
-  width: 100%;
-  background: #f8f8f8;
-  overflow: hidden;
-}
+.signal-page { padding: 20px; }
+.form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 50px; }
+.btn-row { margin-left: 0; margin-top: 20px; }
+.bottom-area { display: flex; margin-top: 20px; height: 500px; }
+.left-table, .right-chart { flex: 1; display: flex; flex-direction: column; height: 100%; }
+.table-wrapper { flex: 1; overflow-y: auto; }
+.left-table { margin-right: 40px; }
+.right-chart { padding-left: 40px; border-left: 1px solid #531b1b; }
+.table-title, .chart-title { font-size: 22px; margin: 0 0 16px 0; padding-left: 10px; }
+.chart-container { flex: 1; height: 100%; width: 100%; background: #f8f8f8; overflow: hidden; }
 </style>

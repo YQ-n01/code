@@ -3,11 +3,11 @@
     <!-- 头部区域 -->
     <div style="height:100px; display:flex; margin-left: 5px;">
       <!-- 左侧区域，包含 logo 和标题 -->
-      <div style="width:445px; display:flex; align-items: center; padding-left: 10px; background-color:#132A56;">
+      <div style="width:400px; display:flex; align-items: center; padding-left: 10px; background-color:#132A56;">
         <!-- Logo 图片，设置圆角 -->
         <img style="width: 80px; height: 80px; border-radius: 10%" src="@/assets/imgs/logo.png" alt=""/>
         <!-- 标题文字，使用大字号，字体加粗，并设置颜色为 mintcream -->
-        <span style="font-size: 36px; font-weight: bold; color: #ffffff; margin-left: 20px">蒸汽管路泄漏监测</span>
+        <span style="font-size: 30px; font-weight: bold; color: #ffffff; margin-left: 20px">蒸汽管路泄漏监测</span>
       </div>
       <!-- 右侧区域，使用 flex 进行占位 -->
       <div style="flex: 1; display: flex; align-items: center; padding-left: 20px;border-bottom: 2px solid #ddd">
@@ -32,7 +32,7 @@
     <!-- 下方区域，包含菜单和数据展示 -->
     <div style="display:flex">
       <!-- 菜单部分 -->
-      <div style="width: 450px; height: 200px; box-shadow: 0 0 8px rgba(0, 0, 0, 0.12);">
+      <div style="width: 405px; height: 200px; box-shadow: 0 0 8px rgba(0, 0, 0, 0.12);">
         <!-- el-menu 组件，控制菜单的展开、选中状态 -->
         <el-menu :router="true" :default-openeds="['1']" :default-active="router.currentRoute.value.path" style="min-height: calc(100vh - 80px);">
           <!-- 一级菜单项：首页 -->
@@ -76,7 +76,7 @@
               <span>泄漏定位</span>
             </template>
             <el-menu-item index="/manager/leak-location1">相位差谱</el-menu-item>
-            <el-menu-item index="/manager/leak-location2">GCC</el-menu-item>
+            <el-menu-item index="/manager/leak-location2">广义互相关</el-menu-item>
           </el-sub-menu>
         </el-menu>
       </div>
